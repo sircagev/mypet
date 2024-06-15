@@ -13,22 +13,27 @@ export const authOptions = {
                 password: { label: "Password", type: "password", placeholder: "Password" },
             },
             async authorize(credentials, req) {
+                try {
+                    const user = await prisma.users.findUnique({
+                        where: { email: credentials.email }
+                    });
 
-                const user = await prisma.users.findUnique({
-                    where: { email: credentials.email }
-                });
+                    if (!user) throw new Error('User not found');
 
-                if (!user) throw new Error('User not found');
+                    const matchPassword = credentials.password === user.password;
 
-                const matchPassword = credentials.password === user.password;
+                    if (!matchPassword) throw new Error('Contraseña Incorrecta');
 
-                if (!matchPassword) throw new Error('Contraseña Incorrecta');
+                    return {
+                        id: user.id,
+                        name: user.fullname,
+                        email: user.email
+                    };
+                } catch (error) {
+                    console.error("Error en authorize:", error);
+                    throw new Error('Error en la autenticación');
+                }
 
-                return {
-                    id: user.id,
-                    name: user.fullname,
-                    email: user.email
-                };
             },
         }),
     ],
