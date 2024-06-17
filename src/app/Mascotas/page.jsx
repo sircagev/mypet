@@ -7,12 +7,23 @@ import Title from '../components/Title'
 const page = () => {
 
     const [pets, setPets] = useState([]);
+    const [categories, setCategories] = useState([]);
 
     const getPets = async () => {
         try {
             const response = await axios.get('http://localhost:3000/api/pets');
             const data = response.data;
             setPets(data);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const getCategories = async () => {
+        try {
+            const response = await axios.get('http://localhost:3000/api/categories');
+            const data = response.data;
+            setCategories(data);
         } catch (error) {
             console.error(error);
         }
@@ -28,8 +39,19 @@ const page = () => {
         }
     }
 
+    const getCategoryCounts = () => {
+        const counts = {};
+        categories.forEach(category => {
+            counts[category.id] = pets.filter(pet => pet.category.id === category.id).length;
+        });
+        return counts;
+    };
+
+    const categoryCounts = getCategoryCounts();
+
     useEffect(() => {
-        getPets()
+        getPets();
+        getCategories();
     }, [])
 
     return (
@@ -40,6 +62,11 @@ const page = () => {
                 </a>
             </Title>
             <div className='flex flex-col gap-3 overflow-y-auto px-7 py-[12px]'>
+                <div className='flex justify-evenly'>
+                    {categories.map(category => (
+                        <div className='text-white font-semibold'>{category.name}s: {categoryCounts[category.id]} </div>
+                    ))}
+                </div>
                 {pets.map(pet => (
                     <AvatarDog name={pet.name} race={pet.race.name} photo={pet.photo} id={pet.id} deletePet={() => deletePet(pet.id)} />
                 ))}

@@ -36,7 +36,7 @@ export async function POST(request) {
 
         const response = NextResponse.json({
             message: 'Authorized',
-        });
+        },{status: 200});
 
         response.cookies.set({
             name: "myPetToken",
