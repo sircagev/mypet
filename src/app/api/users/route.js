@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import withAuth from '../auth/withAuth';
+import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient();
 
@@ -29,8 +30,12 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const { fullname, email, password } = await request.json();
+
+        // Generar un hash de la contraseña usando bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         const newUser = await prisma.users.create({
-            data: { email, fullname, password }
+            data: { email, fullname, password: hashedPassword }
         });
         return new Response(JSON.stringify(newUser), {
             headers: { 'Content-Type': 'application/json' },

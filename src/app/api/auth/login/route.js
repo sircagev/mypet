@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { NextResponse } from 'next/server';
 import { cookies } from "next/headers";
 import withAuth from "../withAuth";
+import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient();
 
@@ -21,7 +22,8 @@ export async function POST(request) {
 
         if (!user) throw new Error('Usuario no encontrado');
 
-        const matchPassword = password === user.password;
+        // Comparar la contraseña proporcionada con la contraseña encriptada almacenada
+        const matchPassword = await bcrypt.compare(password, user.password);
 
         if (!matchPassword) throw new Error('Contraseña Incorrecta');
 
