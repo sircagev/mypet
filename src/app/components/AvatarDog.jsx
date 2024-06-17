@@ -1,5 +1,6 @@
 import { Button } from '@mui/material'
 import React from 'react'
+import Link from 'next/link'
 
 const AvatarDog = ({ race, name, photo, id, deletePet }) => {
   return (
@@ -12,16 +13,15 @@ const AvatarDog = ({ race, name, photo, id, deletePet }) => {
         </div>
       </div>
       <div className='flex items-center justify-center gap-3'>
-        <a href={`/Mascotas/${id}`}>
+        <Link href={`/Mascotas/${id}`}>
           <img src="btn-show.svg" alt="" />
-        </a>
-        <a href={`/Mascotas/${id}/Modificar`}>
+        </Link>
+        <Link href={`/Mascotas/${id}/Modificar`}>
           <img src="btn-edit.svg" alt="" />
-        </a>
+        </Link>
         <Button onClick={deletePet}>
           <img src="btn-delete.svg" alt="" />
         </Button>
-
       </div>
     </div>
   )

@@ -1,11 +1,10 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react'
 import axios from 'axios';
-import { getSession } from "next-auth/react";
 import BasicModal from '@/app/components/BasicModal';
+import Title from '@/app/components/Title';
 
 const page = () => {
-    const [session, setSession] = useState(null);
     const inputFileRef = useRef(null);
     const [races, setRaces] = useState([]);
     const [genders, setGenders] = useState([])
@@ -79,19 +78,6 @@ const page = () => {
         }
     };
 
-    const getInfoSession = async () => {
-        const sessionData = await getSession();
-        setSession(sessionData);
-        console.log(sessionData);
-        const nombreCompleto = sessionData.user.name;
-        const partesNombre = nombreCompleto.split(" ");
-        const primerNombre = partesNombre[0];
-        setNewPet({
-            ...newPet,
-            username: primerNombre
-        });
-    };
-
     const getRaces = async () => {
         try {
             const response = await axios.get('http://localhost:3000/api/races');
@@ -123,7 +109,6 @@ const page = () => {
     }
 
     useEffect(() => {
-        getInfoSession();
         getRaces();
         getCategories();
         getGenders();
@@ -131,17 +116,7 @@ const page = () => {
 
     return (
         <div className='bg-blue-800 w-full min-h-screen flex flex-col items-center '>
-            <div className=' top-0 sticky w-full gap-3 z-10 bg-blue-800 p-7'>
-                <div className='flex w-full h-20 justify-center items-center'>
-                    <a href="/Mascotas">
-                        <img src='/btn-back.svg' />
-                    </a>
-                    <h1 className='text-white text-xl font-semibold w-full text-center'>Adicionar Mascota</h1>
-                    <a href="/Login">
-                        <img src='/icon/btn-close.svg' className='' />
-                    </a>
-                </div>
-            </div>
+            <Title title="Adicionar Mascota"></Title>
             <form className='flex flex-col items-center justify-center w-full relative' onSubmit={handleSubmit}>
                 {newPet.photo ? (
                     <>

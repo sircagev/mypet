@@ -3,7 +3,6 @@ import { writeFile, mkdir } from 'fs/promises'
 import { NextResponse } from 'next/server';
 import path from 'path';
 
-
 const prisma = new PrismaClient();
 
 export async function GET(request) {
@@ -17,7 +16,6 @@ export async function GET(request) {
             }
         });
 
-        console.log(pets)
         return new Response(JSON.stringify(pets), {
             headers: { 'Content-Type': 'application/json' },
             status: 200
@@ -32,9 +30,6 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
-        
-
-        /* const { photo, race_id, category_id, gender_id } = await request.json(); */
         const data = await request.formData();
         const photo = data.get('photo');
 
@@ -47,9 +42,7 @@ export async function POST(request) {
             })
         }
 
-
-        const userName = data.get('username');
-        const userFolder = path.join(process.cwd(), 'public', userName);
+        const userFolder = path.join(process.cwd(), 'public', 'img');
         // Crear la carpeta si no existe
         await mkdir(userFolder, { recursive: true });
 
@@ -60,14 +53,14 @@ export async function POST(request) {
         const extension = path.extname(photo.name);
 
         // Crear un nuevo nombre para la imagen con la marca de tiempo
-        const newFileName = `${path.basename(photo.name, extension)}-${Date.now()}${extension}`;
+        const newFileName = `${path.basename(data.get('name'), extension)}-${Date.now()}${extension}`;
         const filePath = path.join(userFolder, newFileName);
         await writeFile(filePath, buffer)
 
         const newPet = await prisma.pets.create({
             data: {
                 name: data.get('name'),
-                photo: `${userName}/${newFileName}`,
+                photo: `img/${newFileName}`,
                 race_id: parseInt(data.get('race')),
                 category_id: parseInt(data.get('category')),
                 gender_id: parseInt(data.get('gender'))
@@ -79,6 +72,7 @@ export async function POST(request) {
             status: 201
         });
     } catch (error) {
+        console.log(error)
         return new Response(JSON.stringify({ message: 'Error: ' + error.message }), {
             headers: { 'Content-Type': 'application/json' },
             status: 500

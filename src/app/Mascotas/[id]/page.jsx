@@ -1,14 +1,15 @@
 "use client"
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
+import Title from '@/app/components/Title'; 
 
 const page = () => {
 
     const [pet, setPet] = useState([]);
     const router = useRouter()
+    const { id } = useParams(); // Obtén el id desde useParams
 
-    const id = window.location.pathname.split('/').pop();
 
     const getPet = async () => {
         try {
@@ -26,7 +27,7 @@ const page = () => {
             console.log(response.data);
             if (typeof window !== 'undefined') {
                 router.push('/Mascotas');
-              }
+            }
         } catch (error) {
             console.log(error);
         }
@@ -42,17 +43,7 @@ const page = () => {
 
     return (
         <div className='bg-blue-800 w-full min-h-screen flex flex-col items-center '>
-            <div className='flex flex-col items-center justify-center top-0 sticky w-full gap-3 z-10 bg-blue-800 p-7'>
-                <div className='flex w-full h-20 justify-center items-center'>
-                    <a href="/Mascotas">
-                        <img src='/btn-back.svg' />
-                    </a>
-                    <h1 className='text-white text-xl font-semibold w-full text-center'>Consultar Mascota</h1>
-                    <a href="/Login">
-                        <img src='/icon/btn-close.svg' className='' />
-                    </a>
-                </div>
-            </div>
+            <Title title="Consultar Mascotas"></Title>
             <img src={`/${pet.photo}`} alt="" className='w-[160px] h-[160px] rounded-[50%]' />
             <div className='flex flex-col gap-3 px-7 py-[12px] w-full'>
                 <div className='w-full bg-black h-[46px] rounded-lg flex'>
@@ -88,10 +79,10 @@ const page = () => {
                     </div>
                 </div>
                 <div className='flex w-full items-center justify-center gap-3'>
-                    <a href="/Mascotas/1/Modificar">
+                    <a href={`/Mascotas/${id}/Modificar`}>
                         <img src="/btn-edit.svg" alt="" className='w-[50px]' />
                     </a>
-                    <img src="/btn-delete.svg" alt="" className='w-[50px]' onClick={deletePet}/>
+                    <img src="/btn-delete.svg" alt="" className='w-[50px]' onClick={deletePet} />
                 </div>
             </div>
         </div>

@@ -1,39 +1,46 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react'
 import axios from 'axios';
-import { getSession } from "next-auth/react";
 import BasicModal from '@/app/components/BasicModal';
+import Title from '@/app/components/Title';
+import { useParams } from 'next/navigation';
 
 const page = () => {
-    const [session, setSession] = useState(null);
     const inputFileRef = useRef(null);
     const [races, setRaces] = useState([]);
     const [genders, setGenders] = useState([])
     const [categories, setCategories] = useState([])
     const [modalOpen, setModalOpen] = useState(false);
 
-    const id = window.location.pathname.split('/').slice(-2, -1)[0];
+    const { id } = useParams(); // Obtén el id desde useParams
 
     const [pet, setPet] = useState([]);
-    const getPet = async () => {
-        try {
-            console.log(id)
-            const response = await axios.get(`http://localhost:3000/api/pets/${id}`);
-            setPet(response.data);
-            console.log(response.data);
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
     const [newPet, setNewPet] = useState({
         name: '',
         race: '',
         category: '',
-        photo: null, // Almacenar la imagen como un objeto de tipo File
-        gender: '',
-        username: ''
+        photo: null,
+        gender: ''
     });
+
+    const getPet = async () => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/pets/${id}`);
+            const petData = response.data
+            setPet(petData);
+            console.log(petData)
+            setNewPet({
+                name: petData.name,
+                race: petData.race.id,
+                category: petData.category.id,
+                photo: petData.photo,
+                gender: petData.gender_id
+            })
+
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -80,30 +87,16 @@ const page = () => {
         data.append('category', newPet.category);
         data.append('photo', newPet.photo);
         data.append('gender', newPet.gender);
-        data.append('username', newPet.username);
 
         console.log(data)
 
         try {
-            const response = await axios.post('http://localhost:3000/api/pets', data);
+            const response = await axios.put(`http://localhost:3000/api/pets/${id}`, data);
             console.log(response.data); // Manejar la respuesta del servidor si es necesario
             setModalOpen(true);
         } catch (error) {
             console.error(error); // Manejar errores de la solicitud
         }
-    };
-
-    const getInfoSession = async () => {
-        const sessionData = await getSession();
-        setSession(sessionData);
-        console.log(sessionData);
-        const nombreCompleto = sessionData.user.name;
-        const partesNombre = nombreCompleto.split(" ");
-        const primerNombre = partesNombre[0];
-        setNewPet({
-            ...newPet,
-            username: primerNombre
-        });
     };
 
     const getRaces = async () => {
@@ -138,30 +131,21 @@ const page = () => {
 
     useEffect(() => {
         getPet();
-        getInfoSession();
         getRaces();
         getCategories();
-        getGenders();
+        getGenders();     
     }, []);
+
+    if (!pet) return <div>Loading...</div>;
 
     return (
         <div className='bg-blue-800 w-full min-h-screen flex flex-col items-center '>
-            <div className=' top-0 sticky w-full gap-3 z-10 bg-blue-800 p-7'>
-                <div className='flex w-full h-20 justify-center items-center'>
-                    <a href="/Mascotas">
-                        <img src='/btn-back.svg' />
-                    </a>
-                    <h1 className='text-white text-xl font-semibold w-full text-center'>Adicionar Mascota</h1>
-                    <a href="/Login">
-                        <img src='/icon/btn-close.svg' className='' />
-                    </a>
-                </div>
-            </div>
+            <Title title="Modificar Mascota" />
             <form className='flex flex-col items-center justify-center w-full relative' onSubmit={handleSubmit}>
                 {newPet.photo ? (
                     <>
                         <img
-                            src={URL.createObjectURL(newPet.photo)} // Mostrar la imagen seleccionada
+                            src={newPet.photo instanceof File ? URL.createObjectURL(newPet.photo) : `/${newPet.photo}`} // Mostrar la imagen seleccionada
                             alt="Foto de la mascota"
                             className='w-[160px] h-[160px] rounded-[50%]'
                         />
@@ -193,23 +177,23 @@ const page = () => {
                         className='w-[100%] py-3 pl-5 font-semibold opacity-50 rounded-full'
                         placeholder='Nombre'
                         name="name"
-                        value={pet.name}
+                        value={newPet.name}
                         onChange={handleChange}
                     />
                     <select
                         className='w-[100%] py-3 pl-5 font-semibold opacity-50 rounded-full'
                         name="race"
-                        value={pet.race?.id}
+                        value={newPet.race}
                         onChange={handleChange}>
                         <option value="" className='font-semibold text-opacity-50'>Seleccione una raza</option>
                         {races.map(race => (
-                            <option value={race.id} className='font-semibold opacity-50'>{race.name}</option>
+                            <option key={race.id} value={race.id} className='font-semibold opacity-50'>{race.name}</option>
                         ))}
                     </select>
                     <select
                         className='w-[100%] py-3 pl-5 font-semibold opacity-50 rounded-full'
                         name="category"
-                        value={pet.category?.id}
+                        value={newPet.category}
                         onChange={handleChange}>
                         <option value="" className='font-semibold text-opacity-50'>Seleccione una categoría</option>
                         {categories.map(category => (
@@ -228,9 +212,9 @@ const page = () => {
                     <select
                         className='w-[100%] py-3 pl-5 font-semibold opacity-50 rounded-full'
                         name="gender"
-                        value={pet.gender?.id}
+                        value={newPet.gender}
                         onChange={handleChange}>
-                        <option value="1" className='font-semibold text-opacity-50'>Seleccione el genero</option>
+                        <option value="" className='font-semibold text-opacity-50'>Seleccione el genero</option>
                         {genders.map(gender => (
                             <option value={gender.id} className='font-semibold opacity-50'>{gender.name}</option>
                         ))}

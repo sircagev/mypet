@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 
 const prisma = new PrismaClient();
 
@@ -47,21 +47,49 @@ export async function PUT(request, { params }) {
             return NextResponse.json({
                 message: "Image is required",
             }, {
+                headers: { 'Content-Type': 'application/json' },
                 status: 400,
             })
         }
 
-        const bytes = await photo.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        console.log(typeof photo)
 
-        const filePath = path.join(process.cwd(), 'public', photo.name);
-        await writeFile(filePath, buffer)
+        if ((typeof photo) !== 'string') {
+            const bytes = await photo.arrayBuffer();
+            const buffer = Buffer.from(bytes);
+            // Obtener la extensión del archivo
+            const extension = path.extname(photo.name);
+            const userFolder = path.join(process.cwd(), 'public', 'uploads');
+            // Crear la carpeta si no existe
+            await mkdir(userFolder, { recursive: true });
+
+            // Crear un nuevo nombre para la imagen con la marca de tiempo
+            const newFileName = `${path.basename(data.get('name'), extension)}-${Date.now()}${extension}`;
+            const filePath = path.join(userFolder, newFileName);
+            await writeFile(filePath, buffer)
+
+            const updatedPet = await prisma.pets.update({
+                where: { id: parseInt(id) },
+                data: {
+                    name: data.get('name'),
+                    photo: `uploads/${newFileName}`,
+                    race_id: parseInt(data.get('race')),
+                    category_id: parseInt(data.get('category')),
+                    gender_id: parseInt(data.get('gender'))
+                }
+            });
+
+            return new Response(JSON.stringify(updatedPet), {
+                headers: { 'Content-Type': 'application/json' },
+                status: 200
+            });
+        }
 
         const updatedPet = await prisma.pets.update({
             where: { id: parseInt(id) },
             data: {
                 name: data.get('name'),
-                photo: photo.name,
+                photo: `${photo}`,
                 race_id: parseInt(data.get('race')),
                 category_id: parseInt(data.get('category')),
                 gender_id: parseInt(data.get('gender'))
@@ -72,6 +100,8 @@ export async function PUT(request, { params }) {
             headers: { 'Content-Type': 'application/json' },
             status: 200
         });
+
+        
     } catch (error) {
         return new Response(JSON.stringify({ message: 'Error: ' + error.message }), {
             headers: { 'Content-Type': 'application/json' },
