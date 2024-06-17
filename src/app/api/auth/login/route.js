@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import jwt from 'jsonwebtoken'
 import { NextResponse } from 'next/server';
 import { cookies } from "next/headers";
+import withAuth from "../withAuth";
 
 const prisma = new PrismaClient();
 
@@ -13,8 +14,6 @@ export async function POST(request) {
         if (!email || !password) {
             throw new Error('Correo electrónico y contraseña son requeridos');
         }
-
-        console.log(email, password)
 
         const user = await prisma.users.findUnique({
             where: { email: email }
@@ -48,7 +47,6 @@ export async function POST(request) {
 
         return response;
     } catch (error) {
-        console.log(error)
         return NextResponse.json({
             error,
         });
@@ -63,6 +61,8 @@ export async function GET(request) {
         if (!myPetToken) {
             return NextResponse.json({
                 error: "Not logged in"
+            }, {
+                status: 204
             });
         }
 
@@ -75,7 +75,6 @@ export async function GET(request) {
         });
 
     } catch (error) {
-        console.log(error)
         return NextResponse.json({
             error,
         });
@@ -84,9 +83,16 @@ export async function GET(request) {
 
 export async function DELETE(request) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const cookieStore = cookies();
         const token = cookieStore.get("myPetToken");
-        console.log(token);
 
         if (!token) {
             return NextResponse.json({
@@ -98,7 +104,7 @@ export async function DELETE(request) {
         cookieStore.delete("myPetToken");
 
         const response = NextResponse.json(
-            {},
+            { message: "Logout succesfully", },
             {
                 status: 200,
             }
@@ -106,7 +112,6 @@ export async function DELETE(request) {
 
         return response;
     } catch (error) {
-        console.log(error);
         return NextResponse.json(error.message, {
             status: 500,
         });

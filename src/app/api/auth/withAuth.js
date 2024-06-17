@@ -1,19 +1,26 @@
-import { getSession } from 'next-auth/react';
+import jwt from 'jsonwebtoken'
+import { NextResponse } from 'next/server';
+import { cookies } from "next/headers";
 
-const withAuth = (handler) => {
-  return async (req, res) => {
-    const session = await getSession({ req });
+const withAuth = async (request) => {
+  try {
+    const cookieStore = cookies();
+    const myPetToken = cookieStore.get("myPetToken");
 
-    if (!session) {
-      return new Response(JSON.stringify({ message: 'Unauthorized' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 500
-      });
+    if (!myPetToken) {
+      return NextResponse.json({
+        error: "Not logged in"
+      }, { status: 400 });
     }
 
-    req.session = session; // Añadir sesión al objeto de la solicitud
-    return handler(req, res);
-  };
+    const user = jwt.verify(myPetToken.value, process.env.JWT_SECRET);
+
+    return NextResponse.json(user);
+
+  } catch (error) {
+    console.log(error)
+    throw new Error("Invalid token");;
+  }
 };
 
 export default withAuth;

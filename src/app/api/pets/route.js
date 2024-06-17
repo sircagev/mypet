@@ -2,11 +2,19 @@ import { PrismaClient } from '@prisma/client';
 import { writeFile, mkdir } from 'fs/promises'
 import { NextResponse } from 'next/server';
 import path from 'path';
+import withAuth from '../auth/withAuth';
 
 const prisma = new PrismaClient();
 
 export async function GET(request) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
 
         const pets = await prisma.pets.findMany({
             include: {
@@ -30,6 +38,13 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const data = await request.formData();
         const photo = data.get('photo');
 

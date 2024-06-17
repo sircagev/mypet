@@ -1,11 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
+import withAuth from '../../auth/withAuth';
 
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
     try {
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { id } = params;
 
         const pet = await prisma.pets.findUnique({
@@ -38,7 +46,14 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
     try {
-        /* const { id, photo, race_id, category_id, gender_id } = await request.json(); */
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const data = await request.formData();
         const photo = data.get('photo');
         const { id } = params;
@@ -52,7 +67,19 @@ export async function PUT(request, { params }) {
             })
         }
 
-        console.log(typeof photo)
+        const pet = await prisma.pets.findUnique({ where: { id: parseInt(id) } });
+
+        if (!pet) {
+            return NextResponse.json({
+                message: "Pet not found",
+            }, {
+                headers: { 'Content-Type': 'application/json' },
+                status: 404,
+            });
+        }
+
+        let newFileName;
+        let filePath;
 
         if ((typeof photo) !== 'string') {
             const bytes = await photo.arrayBuffer();
@@ -64,44 +91,37 @@ export async function PUT(request, { params }) {
             await mkdir(userFolder, { recursive: true });
 
             // Crear un nuevo nombre para la imagen con la marca de tiempo
-            const newFileName = `${path.basename(data.get('name'), extension)}-${Date.now()}${extension}`;
-            const filePath = path.join(userFolder, newFileName);
+            newFileName = `${path.basename(data.get('name'), extension)}-${Date.now()}${extension}`;
+            filePath = path.join(userFolder, newFileName);
             await writeFile(filePath, buffer)
-
-            const updatedPet = await prisma.pets.update({
-                where: { id: parseInt(id) },
-                data: {
-                    name: data.get('name'),
-                    photo: `uploads/${newFileName}`,
-                    race_id: parseInt(data.get('race')),
-                    category_id: parseInt(data.get('category')),
-                    gender_id: parseInt(data.get('gender'))
-                }
-            });
-
-            return new Response(JSON.stringify(updatedPet), {
-                headers: { 'Content-Type': 'application/json' },
-                status: 200
-            });
+        } else {
+            newFileName = photo;
         }
 
         const updatedPet = await prisma.pets.update({
             where: { id: parseInt(id) },
             data: {
                 name: data.get('name'),
-                photo: `${photo}`,
+                photo: `uploads/${newFileName}`,
                 race_id: parseInt(data.get('race')),
                 category_id: parseInt(data.get('category')),
                 gender_id: parseInt(data.get('gender'))
             }
         });
 
+        // Eliminar la foto anterior si se ha subido una nueva
+        if (typeof photo !== 'string' && pet.photo) {
+            const oldFilePath = path.join(process.cwd(), 'public', pet.photo);
+            await unlink(oldFilePath).catch(err => {
+                console.error("Error deleting old file:", err);
+            });
+        }
+
         return new Response(JSON.stringify(updatedPet), {
             headers: { 'Content-Type': 'application/json' },
             status: 200
         });
 
-        
     } catch (error) {
         return new Response(JSON.stringify({ message: 'Error: ' + error.message }), {
             headers: { 'Content-Type': 'application/json' },
@@ -112,10 +132,25 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { id } = params;
+
+        const pet = await prisma.pets.findUnique({ where: { id: parseInt(id) } });
 
         const deletedPet = await prisma.pets.delete({
             where: { id: parseInt(id) }
+        });
+
+        const oldFilePath = path.join(process.cwd(), 'public', pet.photo);
+        await unlink(oldFilePath).catch(err => {
+            console.error("Error deleting old file:", err);
         });
 
         return new Response(JSON.stringify(deletedPet), {

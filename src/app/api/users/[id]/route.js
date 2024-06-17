@@ -1,10 +1,18 @@
 import { PrismaClient } from '@prisma/client';
+import withAuth from '../../auth/withAuth';
 
 const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
     try {
-        console.log(params)
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { id } = params;
         const user = await prisma.users.findUnique({
             where: { id: parseInt(id) }
@@ -29,11 +37,19 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { fullname, email, password } = await request.json();
         const { id } = params;
         const updatedUser = await prisma.users.update({
             where: { id: parseInt(id) },
-            data: { fullname, email, password  }
+            data: { fullname, email, password }
         });
         return new Response(JSON.stringify(updatedUser), {
             headers: { 'Content-Type': 'application/json' },
@@ -49,6 +65,14 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400 ) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { id } = params;
         const deletedUser = await prisma.users.delete({
             where: { id: parseInt(id) }

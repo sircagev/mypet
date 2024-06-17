@@ -4,6 +4,13 @@ const prisma = new PrismaClient();
 
 export async function GET(request, { params }) {
     try {
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         console.log(params)
         const { id } = params;
         const gender = await prisma.genders.findUnique({
@@ -29,6 +36,14 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400 ) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { name } = await request.json();
         const { id } = params;
         const updatedGender = await prisma.genders.update({
@@ -49,6 +64,14 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400 ) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+        
         const { id } = params;
         const deletedGender = await prisma.genders.delete({
             where: { id: parseInt(id) }

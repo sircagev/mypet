@@ -203,7 +203,7 @@ const page = () => {
                     </button>
                 </div>
             </form>
-            <BasicModal open={modalOpen} onClose={() => setModalOpen(false)} ></BasicModal>
+            <BasicModal open={modalOpen} onClose={() => setModalOpen(false)} title="Registro Exitoso" description="Has registrado exitosamente la mascota"></BasicModal>
         </div>
     )
 }

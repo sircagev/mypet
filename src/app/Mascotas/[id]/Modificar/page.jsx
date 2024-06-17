@@ -227,7 +227,7 @@ const page = () => {
                     </button>
                 </div>
             </form>
-            <BasicModal open={modalOpen} onClose={() => setModalOpen(false)} ></BasicModal>
+            <BasicModal open={modalOpen} onClose={() => setModalOpen(false)} title="Actualización Exitosa" description="Has actualizado exitosamente tu mascota"></BasicModal>
         </div>
     )
 }

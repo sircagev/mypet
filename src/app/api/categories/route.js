@@ -1,9 +1,18 @@
 import { PrismaClient } from '@prisma/client';
+import withAuth from '../auth/withAuth';
 
 const prisma = new PrismaClient();
 
 export async function GET(request) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const categories = await prisma.categories.findMany();
         return new Response(JSON.stringify(categories), {
             headers: { 'Content-Type': 'application/json' },
@@ -19,6 +28,14 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
+
+        const verifyUser = await withAuth(request);
+
+        if (verifyUser.status === 400) {
+            const json = await verifyUser.json();
+            return NextResponse.json(json);
+        }
+
         const { name } = await request.json();
         const newGender = await prisma.categories.create({
             data: { name }
